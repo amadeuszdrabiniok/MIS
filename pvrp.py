@@ -1,6 +1,7 @@
 from pulp import *
 import numpy as np
 T=(1,2)
+LambdaA=(0,1,2)
 Lambda = ([1],[2],[1,2])
 LambdaI=([2],[0,1],[0,1])
 c=([0,5,7,5,0],
@@ -83,6 +84,7 @@ def IIP():
     problem = pulp.LpProblem("PVRP", LpMaximize)
     y = [[pulp.LpVariable("y_%s_%s"%(i+1,t), cat="Binary") for t in T if t  in Lambda[ik[i]]]for i in range(numberOfCustomers)] 
     x = [[[pulp.LpVariable("x_%s_%s_%s"%(i+1,j+1,t), cat="Binary")for t in T if t in Lambda[ik[j]] and t not in Lambda[ik[i]]]for j in range(numberOfCustomers+1) if j is not i]for i in range(numberOfCustomers)] 
+    w = [pulp.LpVariable("w_%s_%s"%(i+1,k), cat="Binary") for i in range(numberOfCustomers) for k in LambdaA if k not in LambdaI[i] ] 
     ys=pulp.lpSum(((c[order[Lambda[ik[i-1]][ty]-1][order[Lambda[ik[i-1]][ty]-1].index(i)-1]][i]+c[i][order[Lambda[ik[i-1]][ty]-1][order[Lambda[ik[i-1]][ty]-1].index(i)+1]]-c[order[Lambda[ik[i-1]][ty]-1][order[Lambda[ik[i-1]][ty]-1].index(i)-1]][order[Lambda[ik[i-1]][ty]-1][order[Lambda[ik[i-1]][ty]-1].index(i)+1]])*
                    y[i-1][ty])for i in range(1,numberOfCustomers+1)for ty in range(len(y[i-1]))) 
     
@@ -91,8 +93,22 @@ def IIP():
 
     h=order[int(x[3-1][3-1][0].name.split("_")[3])-1][order[int(x[3-1][3-1][0].name.split("_")[3])-1].index(int(x[3-1][3-1][0].name.split("_")[2]))-1]
     problem += ys-xs   
+    
+    for i in range(numberOfCustomers):
+        problem+=pulp.lpSum(y[i][t] for t in range(len(y[i]))) == pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in range(len(x[i][j])))
+        
+    for i in range(numberOfCustomers):
+        problem+= (y[i][t] for t in range(len(y[i]))) >= pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in range(len(x[i][j])))
+    
+    for i in range(numberOfCustomers):
+        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) == pulp.lpSum(w[i][k] for k in LambdaA)  
+        
+    for i in range(numberOfCustomers):
+        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) == pulp.lpSum(w[i][k] for k in LambdaA)       
+    
+
+    
     print()
  
 IIP()
 print()   
-# https://developers.google.com/optimization/routing/vrp
