@@ -22,19 +22,37 @@ minImprove  = 0
 minDeviation = 0
 neighborhoodSize = 0
 IIPTimeLimit = 0
-A=[[0,0,0,0]]
+A=[[0,0,0,2]]
 dM=[[]]
 Lambda=[[]]
-LambdaI=[ [0] for i in range(100)]
+LambdaI=[ [0] for i in range(1000)]
+akt=[[0]*10 for i in range(10)]
+d=[]
+x=[]
+y=[]
+order=[]
+currentDay=0
+
+def get_pairs(input_list):
+  # Initialize an empty list to store the pairs
+  pairs = []
+
+  # Iterate through the input list, getting pairs of elements
+  for i in range(len(input_list) - 1):
+    pairs.append((input_list[i], input_list[i + 1]))
+
+  # Return the list of pairs
+  return pairs
 
 def generate_list_of_ints(input_string: str) -> list[int]:
     return [int(x) for x in input_string.split(',')]
 
 def subsets(arr):
-  if len(arr) == 0:
-    return [[]]
-  subs = subsets(arr[1:])
-  return subs + [sub + [arr[0]] for sub in subs]
+  arr.sort()
+  result = [[]]
+  for element in arr:
+    result += [subset + [element] for subset in result]
+  return result
 
 def distance(point1, point2):
   x1, y1 = point1
@@ -139,6 +157,35 @@ class MainWindow(QMainWindow):
         self.ui.StartButton.clicked.connect(self.on_Start_clicked)
         self.ui.ImportButton.clicked.connect(self.on_Import_clicked)
         self.ui.ExportButton.clicked.connect(self.on_Export_clicked)
+        self.ui.nextDay.clicked.connect(self.on_nextDay_clicked)
+
+    def on_nextDay_clicked(self):
+        global currentDay
+        if currentDay < int(daysCount)-1:
+            currentDay = currentDay + 1
+        else:
+            currentDay = 0
+        self.ui.PlotWidget.clear()
+        scatter = pg.ScatterPlotItem(
+            size=10, brush=pg.mkBrush(30, 255, 35, 255))
+        scatter.setData(x, y)
+        #add magazine
+        scatter.addPoints([0],[0], brush=pg.mkBrush('r'))
+        self.ui.PlotWidget.addItem(scatter)
+        #drawing line
+        plt = pg.PlotWidget()
+        pairs = get_pairs(order[currentDay])
+        for i in pairs:
+            if i[0]==0 or i[0]==len(A)+1:
+                line=plt.plot([0,x[i[1]-1]],[0,y[i[1]-1]])
+            elif i[1]==0 or i[1]==len(A)+1:
+                if x[i[0]-1] < 0:
+                    line=plt.plot([x[i[0]-1],0],[0,y[i[0]-1]])
+                else:
+                    line=plt.plot([x[i[0]-1],0],[y[i[0]-1],0])
+            else:
+                line=plt.plot((x[i[0]-1],x[i[1]-1]),(y[i[0]-1],y[i[1]-1]))
+            self.ui.PlotWidget.addItem(line)
 
     def on_Export_clicked(self):
         global A
@@ -155,13 +202,13 @@ class MainWindow(QMainWindow):
         self.ui.label.setText("Clients: "+str(len(A)))
 
     def on_Start_clicked(self):
-        global A, dM, LambdaI
-        x=[]
-        y=[]
+        global A, dM, LambdaI, akt, daysCount, days, x, y, order, currentDay
+
         #displaying shops
         for row in A:
             x.append(row[1])
             y.append(row[2])
+            d.append(row[0])
         scatter = pg.ScatterPlotItem(
             size=10, brush=pg.mkBrush(30, 255, 35, 255))
         scatter.setData(x, y)
@@ -170,24 +217,60 @@ class MainWindow(QMainWindow):
         self.ui.PlotWidget.addItem(scatter)
         #drawing line
         plt = pg.PlotWidget()
-        line=plt.plot([0,1],[0,1])
-        self.ui.PlotWidget.addItem(line)
-        LI=1;
+        LI=0;
         for row in A:
             if type(row[3]) == int:
-                LambdaI[LI]=row[3]
+                LambdaI[LI]=[row[3]]
             elif type(row[3]) == str:
                 LambdaI[LI]=generate_list_of_ints(row[3])
             LI=LI+1
         dM = distance_matrix(A[:,[1,2]])
-        S=generate_initial(Lambda, LambdaI, len(A))
+        S=generate_initial(Lambda, LambdaI, len(A), akt, days, d)
+        stringS=[]
+        for v in range(len(S)):
+            for vv in range(len(S[v])):
+                stringS.append(str(S[v][vv]) + "_" + str(int(S[v][vv].varValue)))
 
+        print(stringS)
+
+        ik=[0]*4
+
+        for vvv in range(len(stringS)):
+            xxx=stringS[vvv].split("_")
+            if(int(xxx[3]) ==1):
+                ik[int(xxx[1])]=int(xxx[2])
+        ik[3]=2
+
+        order=([0],[0])
+        for i in range(len(A)):
+            for t in days:
+                if t in Lambda[ik[i]]:
+                    order[t-1].append(i+1)
+        for t in days:
+            order[t-1].append(len(A)+1)
+        pairs = get_pairs(order[0])
+        for i in pairs:
+            if i[0]==0 or i[0]==len(A)+1:
+                line=plt.plot([0,x[i[1]-1]],[0,y[i[1]-1]])
+            elif i[1]==0 or i[1]==len(A)+1:
+                if x[i[0]-1] < 0:
+                    line=plt.plot([x[i[0]-1],0],[y[i[0]-1]],0)
+                else:
+                    line=plt.plot([x[i[0]-1],0],[0,y[i[0]-1]])
+            else:
+                line=plt.plot((x[i[0]-1],x[i[1]-1]),(y[i[0]-1],y[i[1]-1]))
+            self.ui.PlotWidget.addItem(line)
 
     def on_Save_clicked(self):
-        global daysCount, days, Lambda
+        global daysCount, days, Lambda, akt
         daysCount = self.ui.lineEdit.text()
+        self.ui.label_5.setText("Ilość dni: " + daysCount)
         days = [i+1 for i in range(int(daysCount))]
         Lambda = [subset for subset in subsets(days) if subset]
+        for i in range(len(days)):
+            for j in range(len(Lambda)):
+                if days[i] in Lambda[j]:
+                    akt[j][i]=1
 
 
     def on_SettingsButton_clicked(self):

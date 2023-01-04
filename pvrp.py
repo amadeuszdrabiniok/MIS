@@ -2,7 +2,7 @@ from pulp import *
 import numpy as np
 T=(1,2)
 LambdaA=(0,1,2)
-Lambda = ([1],[2],[1,2])
+Lambda = ([2],[1],[2,1])
 LambdaI=([2],[0,1],[0,1])
 c=([0,5,7,5,0],
      [5,0,5,7,5],
@@ -10,7 +10,7 @@ c=([0,5,7,5,0],
      [5,7,5,0,5],
      [0,5,7,5,0])
 d=(10,10,10)
-a=([1,0],[0,1],[1,1])
+a=([0,1],[1,0],[1,1])
 stringS=[]
 currentSolution = 0
 maxRecord = 40
@@ -20,7 +20,7 @@ fi = 0
 runTime = 0
 maxTime = 0
 neighbourhoodSize = 0
-H = LpVariable("maximum amount of demand serviced on a day", 0, None, LpInteger)
+
 minImprove = 0.0005
 maxDeviation = 0.0005
 
@@ -41,6 +41,7 @@ iterCntr = 0
 
 
 def generate_initial():
+    H = LpVariable("maximum amount of demand serviced on a day", 0, None, LpInteger)
     problem = pulp.LpProblem("PVRP", LpMinimize)
     u = [[pulp.LpVariable("u_%s_%s"%(i,k), cat="Binary") for k in LambdaI[i]]for i in range(numberOfCustomers)] 
     problem+=H
@@ -79,6 +80,7 @@ for i in range(numberOfCustomers):
 for t in T:
     order[t-1].append(numberOfCustomers+1)
 
+print(order)
 def IIP():
     
     problem = pulp.LpProblem("PVRP", LpMaximize)
@@ -98,17 +100,17 @@ def IIP():
         problem+=pulp.lpSum(y[i][t] for t in range(len(y[i]))) == pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in range(len(x[i][j])))
         
     for i in range(numberOfCustomers):
-        problem+= (y[i][t] for t in range(len(y[i]))) >= pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in range(len(x[i][j])))
-    
-    for i in range(numberOfCustomers):
-        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) == pulp.lpSum(w[i][k] for k in LambdaA)  
+        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) == pulp.lpSum(w[i][k] for k in LambdaA)
         
     for i in range(numberOfCustomers):
-        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) == pulp.lpSum(w[i][k] for k in LambdaA)       
+        problem+= (y[i][t] for t in range(len(y[i]))) >= pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in range(len(x[i][j])))      
+        
+    for i in range(numberOfCustomers):
+        problem+=pulp.lpSum(x[i][j][t] for j in range(numberOfCustomers) for t in T if t not in Lambda[ik[i]]) >= (w[i][k] for k in LambdaI[i])  
+        
     
+    for i in range(numberOfCustomers):
+        problem+=pulp.lpSum(w[i][k] for k in LambdaI[i]) <= 1
 
     
-    print()
  
-IIP()
-print()   

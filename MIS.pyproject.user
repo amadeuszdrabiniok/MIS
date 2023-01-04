@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 5.0.2, 2023-01-02T21:13:46. -->
+<!-- Written by QtCreator 5.0.2, 2023-01-03T19:33:11. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -193,6 +193,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">C:/Users/korne/Documents/MIS/Initial.py</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">PythonEditor.RunConfiguration.C:/Users/korne/Documents/MIS/Initial.py</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">C:/Users/korne/Documents/MIS/Initial.py</value>
+    <value type="QString" key="PythonEditor.RunConfiguation.Interpreter">{e328a7ba-9a43-4a80-93be-53f9d081fc59}</value>
     <value type="QString" key="PythonEditor.RunConfiguation.Script">C:\Users\korne\Documents\MIS\Initial.py</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
