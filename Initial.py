@@ -1,6 +1,7 @@
 from pulp import *
 import numpy as np
 
+
 def generate_initial(Lambda, LambdaI, numberOfCustomers,a, T, d):
     print(Lambda)
     print(LambdaI)
@@ -23,7 +24,7 @@ def generate_initial(Lambda, LambdaI, numberOfCustomers,a, T, d):
     if problem.solve() == 1:
         return u
 
-    def IIP(Lambda, LambdaI, numberOfCustomers,a, T, d, ik, order):
+    def IIP(Lambda, LambdaI, LambdaA, numberOfCustomers,a, T, d, ik, order):
         Q=[0]*len(T)
         for i in T:
             b=[d[order[i-1][k]-1] for k in range(1, len(order[i-1])-1)]

@@ -14,6 +14,8 @@ import pyqtgraph as pg
 from SimulationSettingScreen import Ui_SimulationSettingScreen
 import math
 
+from pvrp import IIP
+
 #Global vars
 daysCount = 0
 days = []
@@ -234,7 +236,7 @@ class MainWindow(QMainWindow):
         print(stringS)
 
         ik=[0]*4
-
+        
         for vvv in range(len(stringS)):
             xxx=stringS[vvv].split("_")
             if(int(xxx[3]) ==1):
@@ -260,6 +262,8 @@ class MainWindow(QMainWindow):
             else:
                 line=plt.plot((x[i[0]-1],x[i[1]-1]),(y[i[0]-1],y[i[1]-1]))
             self.ui.PlotWidget.addItem(line)
+        print('ORDERODERFDOERDOERDERODERODER')
+        print(order)
 
     def on_Save_clicked(self):
         global daysCount, days, Lambda, akt

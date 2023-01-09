@@ -1,5 +1,6 @@
 from pulp import *
 import numpy as np
+
 T=(1,2)
 LambdaA=(0,1,2)
 Lambda = ([1],[2],[1,2])
@@ -167,6 +168,54 @@ def IIP():
     if problem.solve() == 1:
         return y, x
 
+def decode_input_Y_objects(input_str_list):
+    values_list = []
+    for input_str in input_str_list:
+        parts = str(input_str).split('_')
+        try:
+            values = [int(parts[1]), int(parts[2])]
+        except ValueError:
+            continue
+        var_value = 1 if parts[0] == 'y' else 0
+        values.append(var_value)
+        values_list.append(values)
+    return values_list
+
+def decode_input_X_objects(input_str_list):
+    values_list = []
+    for input_str in input_str_list:
+        parts = str(input_str).split('_')
+        try:
+            values = [int(parts[1]), int(parts[2]), int(parts[3])]
+        except ValueError:
+            continue
+        var_value = 1 if parts[0] == 'y' else 0
+        values.append(var_value)
+        values_list.append(values)
+    return values_list
+
+def extract_nested(nested_list):
+    result = []
+    for item in nested_list:
+        if isinstance(item, list):
+            result.extend(extract_nested(item))
+        else:
+            result.append(item)
+    return result
+
+
 SS = IIP()
-print()  
+
+decodedSSY = decode_input_Y_objects(extract_nested(SS[0]))
+decodedSSX = decode_input_X_objects(extract_nested(SS[1]))
+
+print(decodedSSX)
+print(decodedSSY)
+
+
+
+
+
+
+
  
