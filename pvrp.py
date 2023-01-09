@@ -168,6 +168,14 @@ def IIP():
     if problem.solve() == 1:
         return y, x
 
+def operate_lists(inputY, inputX, order):
+    for y in inputY:
+        if y[2] == 1:
+            for x in inputX:
+                if x[0] == y[0] and x[3] == 1:
+                    idx = next(i for i, o in enumerate(order) if o[0] == x[0])
+                    order[idx].insert(order[idx].index(x[2]), x[1])
+
 def decode_input_Y_objects(input_str_list):
     values_list = []
     for input_str in input_str_list:
@@ -176,8 +184,7 @@ def decode_input_Y_objects(input_str_list):
             values = [int(parts[1]), int(parts[2])]
         except ValueError:
             continue
-        var_value = 1 if parts[0] == 'y' else 0
-        values.append(var_value)
+        values.append(input_str.varValue)
         values_list.append(values)
     return values_list
 
@@ -189,8 +196,7 @@ def decode_input_X_objects(input_str_list):
             values = [int(parts[1]), int(parts[2]), int(parts[3])]
         except ValueError:
             continue
-        var_value = 1 if parts[0] == 'y' else 0
-        values.append(var_value)
+        values.append(input_str.varValue)
         values_list.append(values)
     return values_list
 
@@ -205,13 +211,13 @@ def extract_nested(nested_list):
 
 
 SS = IIP()
+print(SS)
 
 decodedSSY = decode_input_Y_objects(extract_nested(SS[0]))
 decodedSSX = decode_input_X_objects(extract_nested(SS[1]))
 
 print(decodedSSX)
 print(decodedSSY)
-
 
 
 
