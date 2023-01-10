@@ -9,13 +9,11 @@ from PySide2.QtCore import QFile, QAbstractTableModel, Qt
 from PySide2.QtUiTools import QUiLoader
 from form import Ui_Widget
 from Klient import Ui_ClientScreen
-from Initial import generate_initial
+from Initial import generate_initial, IIP
 import pyqtgraph as pg
 from SimulationSettingScreen import Ui_SimulationSettingScreen
 import math
-
-from pvrp import IIP
-
+import copy
 #Global vars
 daysCount = 0
 days = []
@@ -34,6 +32,49 @@ x=[]
 y=[]
 order=[]
 currentDay=0
+
+def operate_lists(inputY, inputX):
+    for y in inputY:
+        if math.isclose(y[2], 1.0):
+            order[y[1]-1].remove(y[0])
+    for x in inputX:
+        if math.isclose(x[3], 1.0):
+            index = order[x[2]-1].index(x[1])
+            order[x[2]-1].insert(x[0],index-1)
+
+
+def decode_input_Y_objects(input_str_list):
+    values_list = []
+    for input_str in input_str_list:
+        parts = str(input_str).split('_')
+        try:
+            values = [int(parts[1]), int(parts[2])]
+        except ValueError:
+            continue
+        values.append(input_str.varValue)
+        values_list.append(values)
+    return values_list
+
+def decode_input_X_objects(input_str_list):
+    values_list = []
+    for input_str in input_str_list:
+        parts = str(input_str).split('_')
+        try:
+            values = [int(parts[1]), int(parts[2]), int(parts[3])]
+        except ValueError:
+            continue
+        values.append(input_str.varValue)
+        values_list.append(values)
+    return values_list
+
+def extract_nested(nested_list):
+    result = []
+    for item in nested_list:
+        if isinstance(item, list):
+            result.extend(extract_nested(item))
+        else:
+            result.append(item)
+    return result
 
 def get_pairs(input_list):
   # Initialize an empty list to store the pairs
@@ -236,7 +277,7 @@ class MainWindow(QMainWindow):
         print(stringS)
 
         ik=[0]*4
-        
+
         for vvv in range(len(stringS)):
             xxx=stringS[vvv].split("_")
             if(int(xxx[3]) ==1):
@@ -262,8 +303,33 @@ class MainWindow(QMainWindow):
             else:
                 line=plt.plot((x[i[0]-1],x[i[1]-1]),(y[i[0]-1],y[i[1]-1]))
             self.ui.PlotWidget.addItem(line)
-        print('ORDERODERFDOERDOERDERODERODER')
-        print(order)
+            orderA=copy.deepcopy(order)
+            SS = IIP(Lambda, LambdaI, len(A), akt, days, d, ik, orderA, dM)
+
+            decodedSSY = decode_input_Y_objects(extract_nested(SS[0]))
+            decodedSSX = decode_input_X_objects(extract_nested(SS[1]))
+            operate_lists(decodedSSY, decodedSSX)
+            self.ui.PlotWidget.clear()
+            scatter = pg.ScatterPlotItem(
+                size=10, brush=pg.mkBrush(30, 255, 35, 255))
+            scatter.setData(x, y)
+            #add magazine
+            scatter.addPoints([0],[0], brush=pg.mkBrush('r'))
+            self.ui.PlotWidget.addItem(scatter)
+            #drawing line
+            plt = pg.PlotWidget()
+            pairs = get_pairs(order[currentDay])
+            for i in pairs:
+                if i[0]==0 or i[0]==len(A)+1:
+                    line=plt.plot([0,x[i[1]-1]],[0,y[i[1]-1]])
+                elif i[1]==0 or i[1]==len(A)+1:
+                    if x[i[0]-1] < 0:
+                        line=plt.plot([x[i[0]-1],0],[0,y[i[0]-1]])
+                    else:
+                        line=plt.plot([x[i[0]-1],0],[y[i[0]-1],0])
+                else:
+                    line=plt.plot((x[i[0]-1],x[i[1]-1]),(y[i[0]-1],y[i[1]-1]))
+                self.ui.PlotWidget.addItem(line)
 
     def on_Save_clicked(self):
         global daysCount, days, Lambda, akt
