@@ -1,4 +1,5 @@
-    # This Python file uses the following encoding: utf-8
+    
+from multiprocessing.connection import wait
 import os
 from pathlib import Path
 import sys
@@ -9,6 +10,7 @@ from PySide2.QtCore import QFile, QAbstractTableModel, Qt
 from PySide2.QtUiTools import QUiLoader
 from form import Ui_Widget
 from Klient import Ui_ClientScreen
+import itertools
 from Initial import generate_initial, IIP
 import pyqtgraph as pg
 from SimulationSettingScreen import Ui_SimulationSettingScreen
@@ -40,7 +42,7 @@ def operate_lists(inputY, inputX):
     for x in inputX:
         if math.isclose(x[3], 1.0):
             index = order[x[2]-1].index(x[1])
-            order[x[2]-1].insert(x[0],index-1)
+            order[x[2]-1].insert(index,x[0])
 
 
 def decode_input_Y_objects(input_str_list):
@@ -66,6 +68,28 @@ def decode_input_X_objects(input_str_list):
         values.append(input_str.varValue)
         values_list.append(values)
     return values_list
+    
+def neighborhood_moves(i, j, routes):
+    moves = []
+    
+    moves.append(('one_point', i, j))
+    
+    for k in routes:
+        if k != i and k != j:
+            moves.append(('two_point', i, j, k))
+    
+    for k in routes:
+        if k != i and k != j:
+            moves.append(('two_opt', i, j, k))
+    
+    for k, l in itertools.product(routes, repeat=2):
+        if k != i and k != j and l != i and l != j:
+            moves.append(('three_point', i, j, k, l))
+    
+    for k in routes:
+        if k != i and k != j:
+            moves.append(('or_opt', i, j, k))
+    return moves
 
 def extract_nested(nested_list):
     result = []
@@ -77,15 +101,77 @@ def extract_nested(nested_list):
     return result
 
 def get_pairs(input_list):
-  # Initialize an empty list to store the pairs
+  
   pairs = []
 
-  # Iterate through the input list, getting pairs of elements
+  
   for i in range(len(input_list) - 1):
     pairs.append((input_list[i], input_list[i + 1]))
 
-  # Return the list of pairs
+  
   return pairs
+
+def perturb_solution(routes):
+    routes_copy = routes.copy()
+    customers = sorted(routes_copy, key=lambda x: x.demand/x.insertion_cost)
+    
+    customers_to_remove = customers[:int(len(customers)*0.2)]
+    for customer in customers_to_remove:
+        routes_copy.remove(customer)
+    
+    for customer in customers_to_remove:
+        best_cost = float('inf')
+        best_route = None
+        for route in routes_copy:
+            for i in range(len(route)):
+                cost = 0
+                if cost < best_cost:
+                    best_cost = cost
+                    best_route = route
+                    best_index = i
+        best_route.insert(best_index, customer)
+    return routes_copy
+
+def ERTR(routes, K=70, tolerance=0.1):
+    
+    best_solution = routes
+
+    while True:
+        
+        for _ in range(K):
+            
+            for i, j in itertools.product(routes, repeat=2):
+                
+                for move in neighborhood_moves(i, j):
+                    
+                    savings = move
+                    
+                    if savings > 0 and savings <= tolerance :
+                        routes = (routes, move)
+
+        
+        improved = True
+        while improved:
+            improved = False
+            
+            for i, j in itertools.product(routes, repeat=2):
+                
+                for move in neighborhood_moves(i, j):
+                    
+                    savings = move
+                    
+                    if savings > 0:
+                        routes = (routes, move) / 2
+                        improved = True
+
+        
+        if routes.count > best_solution:
+            best_solution = routes
+        else:
+            
+            routes = perturb_solution(routes)
+
+    return best_solution
 
 def generate_list_of_ints(input_string: str) -> list[int]:
     return [int(x) for x in input_string.split(',')]
@@ -100,7 +186,7 @@ def subsets(arr):
 def distance(point1, point2):
   x1, y1 = point1
   x2, y2 = point2
-  return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+  return math.sqrt((int(x2) - int(x1))**2 + (int(y2) - int(y1))**2)
 
 def distance_matrix(points):
   num_points = len(points)
@@ -119,18 +205,18 @@ class TableModel(QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
-            # See below for the nested-list data structure.
-            # .row() indexes into the outer list,
-            # .column() indexes into the sub-list
+            
+            
+            
             return self._data[index.row()][index.column()]
 
     def rowCount(self, index):
-        # The length of the outer list.
+        
         return len(self._data)
 
     def columnCount(self, index):
-        # The following takes the first sub-list, and returns
-        # the length (only works if all rows are an equal length)
+        
+        
         return len(self._data[0])
 
 class SettingsWindow(QMainWindow):
@@ -275,6 +361,9 @@ class MainWindow(QMainWindow):
                 stringS.append(str(S[v][vv]) + "_" + str(int(S[v][vv].varValue)))
 
         print(stringS)
+        single_element_list = [sublist in stringS for sublist in stringS]
+
+        stringS = single_element_list
 
         ik=[0]*4
 
